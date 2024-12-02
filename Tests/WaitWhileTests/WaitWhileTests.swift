@@ -31,7 +31,7 @@ final class WaitWhileTests: XCTestCase {
                     group.addTask {
                         try await Task.sleep(nanoseconds: 5_000_000_000)
                         #if canImport(Testing)
-                            // Issue.record("timed out")
+                            Issue.record("timed out")
                         #endif
                         throw WaitError.timeout
                     }
