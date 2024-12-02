@@ -13,5 +13,14 @@
 ///
 /// Thus we have effectively waited for a presented view controller to be dismissed.
 ///
+/// If we pause for too long, we hit a timeout limit and we move on, reporting a failure.
+/// The default timeout is 5 seconds, but you can append a `timeout:` argument to set a different
+/// amount (in nanoseconds):
+///
+///     await #while(myViewController.presentedViewController != nil, timeout: 1_000_000_000)
+///
 @freestanding(expression)
-public macro `while`(_ value: Bool) = #externalMacro(module: "WaitWhileMacros", type: "WaitWhileMacro")
+public macro `while`(
+    _ value: Bool,
+    timeout nanoseconds: Int = 5_000_000_000
+) = #externalMacro(module: "WaitWhileMacros", type: "WaitWhileMacro")

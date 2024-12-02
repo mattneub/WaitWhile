@@ -11,6 +11,15 @@ public struct WaitWhileMacro: ExpressionMacro {
         guard let argument = node.arguments.first?.expression else {
             fatalError("compiler bug: the macro does not have any arguments")
         }
+        var timeout = "5_000_000_000"
+        if node.arguments.count == 2 {
+            if let userTimeout = node.arguments
+                .children(viewMode: .all).last?
+                .as(LabeledExprSyntax.self)?.expression
+                .as(IntegerLiteralExprSyntax.self)?.description {
+                timeout = userTimeout
+            }
+        }
         let expr: ExprSyntax = """
         {
             enum WaitError: Error {
@@ -19,7 +28,7 @@ public struct WaitWhileMacro: ExpressionMacro {
             }
             try? await withThrowingTaskGroup(of: Void.self) { group in
                 group.addTask {
-                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                    try await Task.sleep(nanoseconds: \(raw: timeout))
                     #if canImport(Testing)
                         Issue.record("timed out")
                     #endif

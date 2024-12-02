@@ -15,7 +15,46 @@ let testMacros: [String: Macro.Type] = [
 #endif
 
 final class WaitWhileTests: XCTestCase {
-    func testMacro() throws {
+    func testMacroWithTimeout() throws {
+        #if canImport(WaitWhileMacros)
+        assertMacroExpansion(
+            """
+            #while(1 == 1, timeout: 1_000_000_000)
+            """,
+            expandedSource: """
+            {
+                enum WaitError: Error {
+                    case success
+                    case timeout
+                }
+                try? await withThrowingTaskGroup(of: Void.self) { group in
+                    group.addTask {
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
+                        #if canImport(Testing)
+                            Issue.record("timed out")
+                        #endif
+                        throw WaitError.timeout
+                    }
+                    group.addTask {
+                        while 1 == 1 {
+                            await Task.yield()
+                            try Task.checkCancellation()
+                        }
+                        throw WaitError.success
+                    }
+                    for try await _ in group {
+                    }
+                }
+            }()
+            """,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
+    func testMacroWithoutTimeout() throws {
         #if canImport(WaitWhileMacros)
         assertMacroExpansion(
             """
