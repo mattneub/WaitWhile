@@ -8,7 +8,7 @@ struct PseudoTest {
         Task {
             try await subject.doSomethingTimeConsuming()
         }
-        await #while(subject.value == 1)
+        await #while((await subject.value) == 1)
         print("done")
     }
 }

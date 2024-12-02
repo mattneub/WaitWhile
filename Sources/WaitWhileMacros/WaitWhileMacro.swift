@@ -13,8 +13,26 @@ public struct WaitWhileMacro: ExpressionMacro {
         }
         let expr: ExprSyntax = """
         {
-            while \(raw: argument.description) {
-                await Task.yield()
+            enum WaitError: Error {
+                case success
+                case timeout
+            }
+            try? await withThrowingTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                    #if canImport(Testing)
+                        // Issue.record("timed out")
+                    #endif
+                    throw WaitError.timeout
+                }
+                group.addTask {
+                    while \(raw: argument.description) {
+                        await Task.yield()
+                        try Task.checkCancellation()
+                    }
+                    throw WaitError.success
+                }
+                for try await _ in group {}
             }
         }()
         """
