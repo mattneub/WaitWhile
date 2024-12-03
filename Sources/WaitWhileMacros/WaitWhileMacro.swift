@@ -21,28 +21,23 @@ public struct WaitWhileMacro: ExpressionMacro {
             }
         }
         let expr: ExprSyntax = """
-        {
-            try? await withThrowingTaskGroup(of: Void.self) { group in
-                group.addTask {
-                    try await Task.sleep(nanoseconds: \(raw: timeout))
-                    #if canImport(Testing)
-                    Issue.record("timed out")
-                    #endif
-                    enum WaitError: Error {
-                        case timeout
-                    }
-                    throw WaitError.timeout
+        { () -> Void in
+            var timeoutTask: Task<(), any Error>? = nil
+            let mainTask = Task {
+                while \(raw: argument.description) {
+                    await Task.yield()
+                    try Task.checkCancellation()
                 }
-                group.addTask {
-                    while \(raw: argument.description) {
-                        await Task.yield()
-                        try Task.checkCancellation()
-                    }
-                }
-                for try await _ in group {
-                    group.cancelAll()
-                }
+                timeoutTask?.cancel()
             }
+            timeoutTask = Task.detached {
+                try await Task.sleep(nanoseconds: \(raw: timeout))
+                mainTask.cancel()
+                #if canImport(Testing)
+                Issue.record("timed out")
+                #endif
+            }
+            _ = await mainTask.result
         }()
         """
         return expr

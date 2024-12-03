@@ -22,28 +22,23 @@ final class WaitWhileTests: XCTestCase {
             #while(1 == 1, timeout: 1_000_000_000)
             """,
             expandedSource: """
-            {
-                try? await withThrowingTaskGroup(of: Void.self) { group in
-                    group.addTask {
-                        try await Task.sleep(nanoseconds: 1_000_000_000)
-                        #if canImport(Testing)
-                        Issue.record("timed out")
-                        #endif
-                        enum WaitError: Error {
-                            case timeout
-                        }
-                        throw WaitError.timeout
+            { () -> Void in
+                var timeoutTask: Task<(), any Error>? = nil
+                let mainTask = Task {
+                    while 1 == 1 {
+                        await Task.yield()
+                        try Task.checkCancellation()
                     }
-                    group.addTask {
-                        while 1 == 1 {
-                            await Task.yield()
-                            try Task.checkCancellation()
-                        }
-                    }
-                    for try await _ in group {
-                        group.cancelAll()
-                    }
+                    timeoutTask?.cancel()
                 }
+                timeoutTask = Task.detached {
+                    try await Task.sleep(nanoseconds: 1_000_000_000)
+                    mainTask.cancel()
+                    #if canImport(Testing)
+                    Issue.record("timed out")
+                    #endif
+                }
+                _ = await mainTask.result
             }()
             """,
             macros: testMacros
@@ -60,28 +55,23 @@ final class WaitWhileTests: XCTestCase {
             #while(1 == 1)
             """,
             expandedSource: """
-            {
-                try? await withThrowingTaskGroup(of: Void.self) { group in
-                    group.addTask {
-                        try await Task.sleep(nanoseconds: 5_000_000_000)
-                        #if canImport(Testing)
-                        Issue.record("timed out")
-                        #endif
-                        enum WaitError: Error {
-                            case timeout
-                        }
-                        throw WaitError.timeout
+            { () -> Void in
+                var timeoutTask: Task<(), any Error>? = nil
+                let mainTask = Task {
+                    while 1 == 1 {
+                        await Task.yield()
+                        try Task.checkCancellation()
                     }
-                    group.addTask {
-                        while 1 == 1 {
-                            await Task.yield()
-                            try Task.checkCancellation()
-                        }
-                    }
-                    for try await _ in group {
-                        group.cancelAll()
-                    }
+                    timeoutTask?.cancel()
                 }
+                timeoutTask = Task.detached {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                    mainTask.cancel()
+                    #if canImport(Testing)
+                    Issue.record("timed out")
+                    #endif
+                }
+                _ = await mainTask.result
             }()
             """,
             macros: testMacros
