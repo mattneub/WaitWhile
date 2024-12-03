@@ -22,16 +22,15 @@ public struct WaitWhileMacro: ExpressionMacro {
         }
         let expr: ExprSyntax = """
         {
-            enum WaitError: Error {
-                case success
-                case timeout
-            }
             try? await withThrowingTaskGroup(of: Void.self) { group in
                 group.addTask {
                     try await Task.sleep(nanoseconds: \(raw: timeout))
                     #if canImport(Testing)
-                        Issue.record("timed out")
+                    Issue.record("timed out")
                     #endif
+                    enum WaitError: Error {
+                        case timeout
+                    }
                     throw WaitError.timeout
                 }
                 group.addTask {
@@ -39,9 +38,10 @@ public struct WaitWhileMacro: ExpressionMacro {
                         await Task.yield()
                         try Task.checkCancellation()
                     }
-                    throw WaitError.success
                 }
-                for try await _ in group {}
+                for try await _ in group {
+                    group.cancelAll()
+                }
             }
         }()
         """

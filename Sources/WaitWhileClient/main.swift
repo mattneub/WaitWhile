@@ -6,7 +6,7 @@ struct PseudoTest {
     func doPseudoTest1() async {
         await #while(1 == 1)
     }
-    func doSpeudoTest2() async {
+    func doPseudoTest2() async {
         await #while(1 == 1, timeout: 1_000_000_000)
     }
 }

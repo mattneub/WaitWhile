@@ -23,16 +23,15 @@ final class WaitWhileTests: XCTestCase {
             """,
             expandedSource: """
             {
-                enum WaitError: Error {
-                    case success
-                    case timeout
-                }
                 try? await withThrowingTaskGroup(of: Void.self) { group in
                     group.addTask {
                         try await Task.sleep(nanoseconds: 1_000_000_000)
                         #if canImport(Testing)
-                            Issue.record("timed out")
+                        Issue.record("timed out")
                         #endif
+                        enum WaitError: Error {
+                            case timeout
+                        }
                         throw WaitError.timeout
                     }
                     group.addTask {
@@ -40,9 +39,9 @@ final class WaitWhileTests: XCTestCase {
                             await Task.yield()
                             try Task.checkCancellation()
                         }
-                        throw WaitError.success
                     }
                     for try await _ in group {
+                        group.cancelAll()
                     }
                 }
             }()
@@ -62,16 +61,15 @@ final class WaitWhileTests: XCTestCase {
             """,
             expandedSource: """
             {
-                enum WaitError: Error {
-                    case success
-                    case timeout
-                }
                 try? await withThrowingTaskGroup(of: Void.self) { group in
                     group.addTask {
                         try await Task.sleep(nanoseconds: 5_000_000_000)
                         #if canImport(Testing)
-                            Issue.record("timed out")
+                        Issue.record("timed out")
                         #endif
+                        enum WaitError: Error {
+                            case timeout
+                        }
                         throw WaitError.timeout
                     }
                     group.addTask {
@@ -79,9 +77,9 @@ final class WaitWhileTests: XCTestCase {
                             await Task.yield()
                             try Task.checkCancellation()
                         }
-                        throw WaitError.success
                     }
                     for try await _ in group {
+                        group.cancelAll()
                     }
                 }
             }()
