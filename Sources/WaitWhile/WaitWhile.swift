@@ -15,7 +15,7 @@
 ///
 /// If we pause for too long, we hit a timeout limit and we move on, reporting a failure.
 /// The default timeout is 5 seconds, but you can append a `timeout:` argument to set a different
-/// amount (in nanoseconds):
+/// amount (as a literal, in nanoseconds):
 ///
 ///     await #while(myViewController.presentedViewController != nil, timeout: 1_000_000_000)
 ///
