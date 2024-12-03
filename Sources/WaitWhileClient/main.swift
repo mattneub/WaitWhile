@@ -1,30 +1,13 @@
 import WaitWhile
+import Testing
 
-@MainActor
+/// You can't run this; it's just so we can peek at the macro expansions.
 struct PseudoTest {
-    let subject = PseudoTestee()
-    func doPseudoTest() async {
-        print("start")
-        Task {
-            try await subject.doSomethingTimeConsuming()
-        }
-        await #while(subject.value == 1)
-        print("done")
+    func doPseudoTest1() async {
+        await #while(1 == 1)
+    }
+    func doPseudoTest2() async {
+        await #while(1 == 1, timeout: 1_000_000_000)
     }
 }
-
-@MainActor
-class PseudoTestee {
-    var value = 1
-
-    func doSomethingTimeConsuming() async throws {
-        if #available(macOS 13.0, iOS 16.0, *) {
-            try await Task.sleep(for: .seconds(1))
-        }
-        value = 2
-    }
-}
-
-let test = PseudoTest()
-await test.doPseudoTest()
 

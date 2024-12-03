@@ -56,7 +56,17 @@ That works great. But I was doing that _a lot_. So I wanted to embody that patte
 
 That's all there is to it! It's a very simple macro, very simply written; I didn't do any of the clever stuff that Apple does with `#expect` behind the scenes.
 
-## Future directions
+## Timeout
 
-I'd like to add a timeout, because if you make a `while` loop whose condition is never met, the test currently doesn't fail — it just hangs. I think I see how to do this, but once I had the macro working well enough to adopt in my own code, I stopped working on it for now. So that's left as a future direction.
+The way I originally wrote this macro, if you made a `while` loop whose condition was _always_ true, the test wouldn’t fail or even finish — it would just hang. So I added a default timeout of 5 seconds. This makes the macro a bit more complicated, but that doesn’t matter, really, because you’re not supposed to worry about what a macro does behind the scenes (though of course you can see it if you really want to).
+
+If the timeout is reached before the condition ceases to be true, the test will record a failure, and will resume running after the line containing the macro. Thus, the test will complete but will fail, which seems like just the behavior we want.
+
+Moreover, you can change the timeout (which you might do, say, if the default is insufficiently long). Add a second parameter, `timeout`, whose value is a literal in nanoseconds:
+
+```swift
+        await #while(mockProcessor.messagesReceived.isEmpty, timeout: 7_000_000_000)
+```
+
+
 
