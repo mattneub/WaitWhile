@@ -23,6 +23,7 @@ public struct WaitWhileMacro: ExpressionMacro {
         let expr: ExprSyntax = """
         { () -> Void in
             var timeoutTask: Task<(), any Error>? = nil
+            var timedOut = false
             let mainTask = Task {
                 while \(raw: argument.description) {
                     await Task.yield()
@@ -32,12 +33,15 @@ public struct WaitWhileMacro: ExpressionMacro {
             }
             timeoutTask = Task.detached {
                 try await Task.sleep(nanoseconds: \(raw: timeout))
+                timedOut = true
                 mainTask.cancel()
+            }
+            _ = await mainTask.result
+            if timedOut {
                 #if canImport(Testing)
                 Issue.record("timed out")
                 #endif
             }
-            _ = await mainTask.result
         }()
         """
         return expr

@@ -24,6 +24,7 @@ final class WaitWhileTests: XCTestCase {
             expandedSource: """
             { () -> Void in
                 var timeoutTask: Task<(), any Error>? = nil
+                var timedOut = false
                 let mainTask = Task {
                     while 1 == 1 {
                         await Task.yield()
@@ -33,12 +34,15 @@ final class WaitWhileTests: XCTestCase {
                 }
                 timeoutTask = Task.detached {
                     try await Task.sleep(nanoseconds: 1_000_000_000)
+                    timedOut = true
                     mainTask.cancel()
+                }
+                _ = await mainTask.result
+                if timedOut {
                     #if canImport(Testing)
                     Issue.record("timed out")
                     #endif
                 }
-                _ = await mainTask.result
             }()
             """,
             macros: testMacros
@@ -57,6 +61,7 @@ final class WaitWhileTests: XCTestCase {
             expandedSource: """
             { () -> Void in
                 var timeoutTask: Task<(), any Error>? = nil
+                var timedOut = false
                 let mainTask = Task {
                     while 1 == 1 {
                         await Task.yield()
@@ -66,12 +71,15 @@ final class WaitWhileTests: XCTestCase {
                 }
                 timeoutTask = Task.detached {
                     try await Task.sleep(nanoseconds: 5_000_000_000)
+                    timedOut = true
                     mainTask.cancel()
+                }
+                _ = await mainTask.result
+                if timedOut {
                     #if canImport(Testing)
                     Issue.record("timed out")
                     #endif
                 }
-                _ = await mainTask.result
             }()
             """,
             macros: testMacros
