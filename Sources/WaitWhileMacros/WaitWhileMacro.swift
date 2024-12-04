@@ -13,10 +13,9 @@ public struct WaitWhileMacro: ExpressionMacro {
         }
         var timeout = "5_000_000_000"
         if node.arguments.count == 2 {
-            if let userTimeout = node.arguments
-                .children(viewMode: .all).last?
-                .as(LabeledExprSyntax.self)?.expression
-                .as(IntegerLiteralExprSyntax.self)?.description {
+            let index = node.arguments.index(at: 1)
+            let labeledExpression = node.arguments[index].expression
+            if let userTimeout = labeledExpression.as(IntegerLiteralExprSyntax.self)?.literal.text {
                 timeout = userTimeout
             }
         }
